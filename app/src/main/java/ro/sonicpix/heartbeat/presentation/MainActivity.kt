@@ -42,6 +42,7 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.tooling.preview.devices.WearDevices
+import com.robsonmartins.androidmidisynth.SynthManager
 import jp.kshoji.blemidi.device.MidiInputDevice
 import jp.kshoji.blemidi.device.MidiOutputDevice
 import jp.kshoji.blemidi.listener.OnMidiDeviceAttachedListener
@@ -49,6 +50,7 @@ import jp.kshoji.blemidi.listener.OnMidiDeviceDetachedListener
 import jp.kshoji.blemidi.peripheral.BleMidiPeripheralProvider
 import ro.sonicpix.heartbeat.R
 import ro.sonicpix.heartbeat.presentation.theme.HeartBeatTheme
+
 
 const val debugTag = "HeartBeatz"
 
@@ -66,9 +68,15 @@ val permissions = mapOf(
 )
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        init { System.loadLibrary("synth-lib") }
+    }
+
+    private lateinit var synthManager: SynthManager
     private val handler = Handler(Looper.getMainLooper())
     private var runnable: Runnable? = null
-    private var toneGenerator: ToneGenerator? = null
+
     private var bluetoothStarted = false
 
     private lateinit var sensorManager: SensorManager
@@ -97,6 +105,12 @@ class MainActivity : ComponentActivity() {
         bleMidiPeripheralProvider.setAutoStartDevice(true)
         bleMidiPeripheralProvider.setManufacturer(resources.getString(R.string.app_name))
         bleMidiPeripheralProvider.setDeviceName(resources.getString(R.string.app_name))
+
+        synthManager = SynthManager(this)
+        synthManager.loadSF("KawaiStereoGrand.sf3")
+        synthManager.setVolume(127)
+
+
 
         setContent {
             MainScreen(mainText = mainText)
@@ -178,6 +192,7 @@ class MainActivity : ComponentActivity() {
         val midiVelocity = (heartBeatIntervalMs/10).toInt()
 
         toneGenerator?.startTone(ToneGenerator.TONE_CDMA_PIP, 50)
+
 
         midiOutputDevice?.sendMidiTimingClock()
         midiOutputDevice?.sendMidiNoteOn(midiChannel, heartBeatMidiNote, midiVelocity)

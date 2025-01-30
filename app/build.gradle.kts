@@ -49,6 +49,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    ndkVersion = "27.0.11902837 rc2"
+    externalNativeBuild {
+        cmake {
+            path("src/main/cpp/CMakeLists.txt")
+        }
+    }
 }
 
 dependencies {
@@ -72,7 +78,9 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
     implementation ("jp.kshoji:ble-midi:0.0.19:@aar")
-    implementation ("com.github.LeffelMania:android-midi-lib:f8f2a6645")
-    implementation ("com.github.LucasAlfare:FLMidi:v1.0.2")
+    // implementation ("com.github.LeffelMania:android-midi-lib:f8f2a6645")
+    // implementation ("com.github.LucasAlfare:FLMidi:v1.0.2")
+    // implementation("net.volcanomobile.fluidsynth-android:fluidsynth-android:2.3.3")
+
 }
 
