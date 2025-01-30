@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">HeartBeatz</string>
+    <string name="please_wait">Please Wait…</string>
+    <string name="tile_label">HeartBeatz</string>
+    <string name="allow_permissions">Allow Permissions</string>
+
+</resources>
