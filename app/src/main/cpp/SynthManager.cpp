@@ -89,25 +89,29 @@ void SynthManager::freeInstance() {
     }
 }
 
-bool SynthManager::loadSF(const char *soundfontPath, int program) {
+bool SynthManager::loadSF(const char *soundfontPath) {
     if (synth == nullptr) return false;
     // load soundfont
     int id = fluid_synth_sfload(synth, soundfontPath, 0);
     if (id == FLUID_FAILED) return false;
     fluid_synth_sfont_select(synth, 0, id);
-    fluid_synth_program_change(synth, 0, program);
     soundfontId = id;
     return true;
 }
 
-void SynthManager::noteOn(int note, int velocity) {
+void SynthManager::programChange(int chan, int program) {
     if (synth == nullptr) return;
-    fluid_synth_noteon(synth, 0, note, velocity);
+    fluid_synth_program_change(synth, chan, program);
 }
 
-void SynthManager::noteOff(int note) {
+void SynthManager::noteOn(int chan, int note, int velocity) {
     if (synth == nullptr) return;
-    fluid_synth_noteoff(synth, 0, note);
+    fluid_synth_noteon(synth, chan , note, velocity);
+}
+
+void SynthManager::noteOff(int chan, int note) {
+    if (synth == nullptr) return;
+    fluid_synth_noteoff(synth, chan, note);
 }
 
 void SynthManager::reverb(int level) {
@@ -116,9 +120,9 @@ void SynthManager::reverb(int level) {
     fluid_synth_set_reverb_group_level(synth, -1, level / 127.0);
 }
 
-void SynthManager::sendCC(int controller, int value) {
+void SynthManager::sendCC(int chan, int controller, int value) {
     if (synth == nullptr) return;
-    fluid_synth_cc(synth, 0, controller, value);
+    fluid_synth_cc(synth, chan, controller, value);
 }
 
 void SynthManager::setLatency(int ms){
@@ -153,10 +157,10 @@ Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthInit(
  */
 JNIEXPORT int JNICALL
 Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthLoadSF(
-        JNIEnv *env, jobject, jstring jSoundfontPath, int program) {
+        JNIEnv *env, jobject, jstring jSoundfontPath) {
     // convert Java string to C string
     const char *soundfontPath = env->GetStringUTFChars(jSoundfontPath, nullptr);
-    return SynthManager::getInstance()->loadSF(soundfontPath, program) ? 0 : -1;
+    return SynthManager::getInstance()->loadSF(soundfontPath) ? 0 : -1;
 }
 
 /**
@@ -180,9 +184,23 @@ Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthFree(
  * @param   velocity       The velocity of the note to be played.
  */
 JNIEXPORT void JNICALL
+Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthProgramChange(
+        JNIEnv *env, jobject, int chan, int program) {
+    SynthManager::getInstance()->programChange(chan, program);
+}
+
+/**
+ * @brief   Native implementation of SynthManager.fluidsynthNoteOn() method.
+ * @details Plays the note.
+ * @param   env            JNI Env pointer.
+ * @param   (unnamed)      SynthManager (Java) object.
+ * @param   note           The note to be played.
+ * @param   velocity       The velocity of the note to be played.
+ */
+JNIEXPORT void JNICALL
 Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthNoteOn(
-        JNIEnv *env, jobject, int note, int velocity) {
-    SynthManager::getInstance()->noteOn(note, velocity);
+        JNIEnv *env, jobject, int chan, int note, int velocity) {
+    SynthManager::getInstance()->noteOn(chan, note, velocity);
 }
 
 /**
@@ -194,8 +212,8 @@ Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthNoteOn(
  */
 JNIEXPORT void JNICALL
 Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthNoteOff(
-        JNIEnv *env, jobject, int note) {
-    SynthManager::getInstance()->noteOff(note);
+        JNIEnv *env, jobject, int chan,  int note) {
+    SynthManager::getInstance()->noteOff(chan, note);
 }
 
 /**
@@ -208,8 +226,8 @@ Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthNoteOff(
  */
 JNIEXPORT void JNICALL
 Java_com_robsonmartins_androidmidisynth_SynthManager_fluidsynthCC(
-        JNIEnv *env, jobject, int controller, int value) {
-    SynthManager::getInstance()->sendCC(controller, value);
+        JNIEnv *env, jobject, int chan ,int controller, int value) {
+    SynthManager::getInstance()->sendCC(chan, controller, value);
 }
 
 /**

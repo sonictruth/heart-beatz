@@ -51,27 +51,31 @@ public:
     /**
      * @brief Load a soundfont file.
      * @param soundfontPath Full soundfont filename path.
-     * @param program Program number to select (default = 0).
      * @return True if successful. False otherwise.
      */
-    bool loadSF(const char *soundfontPath, int program = 0);
+    bool loadSF(const char *soundfontPath);
     /**
      * @brief Play a note.
      * @param note Note number.
      * @param velocity The velocity of the note.
      */
-    void noteOn(int note, int velocity);
+    void programChange(int chan, int program);
+    /**
+     * @brief Program change.
+     * @param program program.
+     */
+    void noteOn(int chan, int note, int velocity);
     /**
      * @brief Stop of playing a note.
      * @param note Note number.
      */
-    void noteOff(int note);
+    void noteOff(int cham, int note);
     /**
      * @brief Send a MIDI command.
      * @param controller Controller number.
      * @param value Value to send.
      */
-    void sendCC(int controller, int value);
+    void sendCC(int chan, int controller, int value);
     /**
      * @brief Adjust reverb effect.
      * @param level Level of the reverb.

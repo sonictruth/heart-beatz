@@ -88,7 +88,6 @@ find_package(OpenMP REQUIRED)
 
 # Native Library that will be called directly from JAVA
 add_library(synth-lib SHARED
-		MidiManager.cpp
 		SynthManager.cpp
 )
 

@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -54,7 +52,18 @@ import ro.sonicpix.heartbeat.presentation.theme.HeartBeatTheme
 
 const val debugTag = "HeartBeatz"
 
-const val heartBeatMidiNote = 70
+val song: Array<IntArray> = arrayOf(
+    intArrayOf(60, 60), // C, C (Twinkle, twinkle)
+    intArrayOf(67, 67), // G, G (little star)
+    intArrayOf(69, 69), // A, A (How I wonder)
+    intArrayOf(67),     // G, (what you are)
+    intArrayOf(65, 65), // F, F (Up above the)
+    intArrayOf(64, 64), // E, E (world so high)
+    intArrayOf(62, 62), // D, D (Like a diamond)
+    intArrayOf(60)      // C, (in the sky)
+)
+
+var currentSongIndex = 0
 
 val permissions = mapOf(
     Manifest.permission.BLUETOOTH to "Bluetooth",
@@ -76,7 +85,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var synthManager: SynthManager
     private val handler = Handler(Looper.getMainLooper())
     private var runnable: Runnable? = null
-
     private var bluetoothStarted = false
 
     private lateinit var sensorManager: SensorManager
@@ -98,7 +106,6 @@ class MainActivity : ComponentActivity() {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 90)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         heartRateSensorListener = HeartRateSensorListener()
         bleMidiPeripheralProvider = BleMidiPeripheralProvider(this)
@@ -107,10 +114,9 @@ class MainActivity : ComponentActivity() {
         bleMidiPeripheralProvider.setDeviceName(resources.getString(R.string.app_name))
 
         synthManager = SynthManager(this)
-        synthManager.loadSF("KawaiStereoGrand.sf3")
-        synthManager.setVolume(127)
-
-
+        synthManager.loadSF("gm.sf2")
+        synthManager.setVolume(0,127)
+        synthManager.fluidsynthProgramChange(1, 24)
 
         setContent {
             MainScreen(mainText = mainText)
@@ -164,7 +170,6 @@ class MainActivity : ComponentActivity() {
                         debugTag,
                         "Midi ${midiOutputDevice.deviceName} Output Attached"
                     )
-                    midiOutputDevice.sendMidiStart()
                     this@MainActivity.midiOutputDevice = midiOutputDevice
                 }
             }
@@ -179,27 +184,38 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        toneGenerator?.release()
-        toneGenerator = null
+        synthManager.finalize()
         bleMidiPeripheralProvider.terminate()
         sensorManager.unregisterListener(heartRateSensorListener)
         stopInterval()
         super.onDestroy()
     }
 
+    fun sendMidiNote( channel: Int, note: Int, velocity: Int) {
+        midiOutputDevice?.sendMidiNoteOn(channel, note, velocity)
+        synthManager.fluidsynthNoteOn(channel, note, velocity)
+        handler.postDelayed({
+            midiOutputDevice?.sendMidiNoteOff(channel, note, velocity)
+            synthManager.fluidsynthNoteOff(channel, note)
+        }, heartBeatIntervalMs)
+    }
+
     private fun playHeartBeat() {
-        val midiChannel = 0
-        val midiVelocity = (heartBeatIntervalMs/10).toInt()
 
-        toneGenerator?.startTone(ToneGenerator.TONE_CDMA_PIP, 50)
+        var channel = 1
+        val notes = song[currentSongIndex]
+        currentSongIndex = (currentSongIndex + 1) % song.size
 
+        val velocity = (heartBeatIntervalMs/10).toInt()
 
         midiOutputDevice?.sendMidiTimingClock()
-        midiOutputDevice?.sendMidiNoteOn(midiChannel, heartBeatMidiNote, midiVelocity)
 
-        handler.postDelayed({
-            midiOutputDevice?.sendMidiNoteOff(midiChannel, heartBeatMidiNote, midiVelocity)
-        }, heartBeatIntervalMs)
+        for (note in notes) {
+            Log.d(debugTag, "Note ${note} ${velocity}   ")
+            sendMidiNote(channel, note, velocity)
+            channel++;
+        }
+        Log.d(debugTag, "---")
     }
 
     private fun startInterval() {

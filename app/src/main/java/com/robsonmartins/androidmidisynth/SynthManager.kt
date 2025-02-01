@@ -53,18 +53,13 @@ class SynthManager(private val context: Context) {
     /**
      * @brief Load a soundfont file.
      * @param filename The soundfont filename.
-     * @param program Program number to select (default = 0).
      */
-    fun loadSF(filename: String, program: Int = 0) {
+    fun loadSF(filename: String) {
         try {
             soundFontPath = copyAssetToTmpFile(filename)
-            if (fluidsynthLoadSF(soundFontPath, program) < 0) {
+            if (fluidsynthLoadSF(soundFontPath) < 0) {
                 throw IOException("Error loading $filename")
             }
-            fluidsynthCC(24,0)
-
-            fluidsynthNoteOn(60,70)
-            fluidsynthNoteOn(60,70)
 
         } catch (e: IOException) {
             throw RuntimeException(e)
@@ -75,8 +70,8 @@ class SynthManager(private val context: Context) {
      * @brief Set synth volume.
      * @param volume The volume level.
      */
-    fun setVolume(volume: Int) {
-        fluidsynthCC(7, volume)
+    fun setVolume(channel : Int,    volume: Int) {
+        fluidsynthCC(0,7, volume)
     }
 
     @Throws(IOException::class)
@@ -109,9 +104,8 @@ class SynthManager(private val context: Context) {
      * @brief   Import of the native implementation of SynthManager.fluidsynthLoadSF() method.
      * @details Loads a soundfont file.
      * @param   soundfontPath The soundfont filename full path.
-     * @param   program       The number of the program
      */
-    private external fun fluidsynthLoadSF(soundfontPath: String?, program: Int): Int
+    private external fun fluidsynthLoadSF(soundfontPath: String?): Int
     /*
      * @brief   Import of the native implementation of SynthManager.fluidsynthFree() method.
      * @details Finalizes the FluidSynth library.
@@ -123,20 +117,18 @@ class SynthManager(private val context: Context) {
      * @param   note      The note to be played.
      * @param   velocity  The velocity of the note to be played.
      */
-    private external fun fluidsynthNoteOn(note: Int, velocity: Int)
+    external fun fluidsynthProgramChange(channel: Int, program: Int)
     /*
      * @brief   Import of the native implementation of SynthManager.fluidsynthNoteOff() method.
      * @details Stops the playing note.
      * @param   note The note to be stopped.
      */
-    private external fun fluidsynthNoteOff(note: Int)
-    /*
-     * @brief   Import of the native implementation of SynthManager.fluidsynthCC() method.
-     * @details Sends a control command via MIDI.
-     * @param   controller Number of the controller.
-     * @param   value      Value to send.
-     */
-    private external fun fluidsynthCC(controller: Int, value: Int)
+
+    external fun fluidsynthNoteOn(channel: Int, note: Int, velocity: Int)
+
+    external fun fluidsynthNoteOff(channel: Int, note: Int)
+
+    external fun fluidsynthCC(channel: Int, controller: Int, value: Int)
     /*
      * @brief   Import of the native implementation of SynthManager.fluidsynthReverb() method.
      * @details Sets the reverb level.
